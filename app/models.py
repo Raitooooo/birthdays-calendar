@@ -8,7 +8,7 @@ class User(Base):
   __tablename__ = 'users'
 
   tg_id: Mapped[str] = mapped_column(primary_key=True)
-  username: Mapped[str]
-  name: Mapped[str]
-  birthday: Mapped[date]
-  photo_path: Mapped[str]
+  username: Mapped[str | None]
+  name: Mapped[str | None]
+  birthday: Mapped[date | None]
+  photo_path: Mapped[str | None]
