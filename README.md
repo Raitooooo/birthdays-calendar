@@ -1,2 +1,2 @@
-# birthdays-calendar
-college project
+# Календарь с ДР
+
