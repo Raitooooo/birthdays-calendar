@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 import calendar
 import os
 
@@ -198,6 +198,13 @@ async def generate_calendar_with_photos(bot: Bot, year, month, output_path='cale
     if not user.birthday:
       continue
     if user.birthday.month == month:
-      caption += f'{user.birthday.day}.{user.birthday.month}.{user.birthday.year}: {user.name} - @{user.username} (исполняется {2025-user.birthday.year})\n' 
+      today = date.today()
+      age = today.year - user.birthday.year
+      
+      # Проверяем, был ли уже день рождения в этом году
+      if today.month < user.birthday.month or (today.month == user.birthday.month and today.day < user.birthday.day):
+          age -= 1
+
+      caption += f'{user.birthday.day}.{user.birthday.month}.{user.birthday.year}: {user.name} - @{user.username} (исполняется {(age+1)})\n' 
   
   return caption
