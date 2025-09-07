@@ -10,7 +10,9 @@ bot = Bot(settings.BOT_API_KEY)
 dp = Dispatcher()
 
 async def main():
-  await dp.start_polling(bot)
+    dp.include_router(router)
+    
+    await dp.start_polling(bot)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

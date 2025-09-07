@@ -17,7 +17,7 @@ class UserCRUD:
     username: str
   ):
     user = User(
-      tg_id=tg_id,
+      tg_id=str(tg_id),
       username=username
     )
     session.add(user)
@@ -29,7 +29,7 @@ class UserCRUD:
   ) -> User | None:
     query = (
       select(User)
-      .where(User.tg_id == tg_id)
+      .where(User.tg_id == str(tg_id))
     )
 
     user = (await session.execute(query)).scalar_one_or_none()
@@ -39,12 +39,12 @@ class UserCRUD:
   async def change_user_data(
     self,
     session: AsyncSession,
+    tg_id: int,
     *,
-    tg_id: int = None,
     username: str = None,
     name: str = None,
     birthday: date = None,
-    photo_path: str = None
+    photo_id: str = None
   ):
     user = await self.get_user(session, tg_id)
 
@@ -57,7 +57,7 @@ class UserCRUD:
       user.name = name
     if birthday:
       user.birthday = birthday
-    if photo_path:
-      user.photo_path = photo_path
+    if photo_id:
+      user.photo_id = photo_id
 
 user_crud = UserCRUD()

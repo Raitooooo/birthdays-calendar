@@ -11,4 +11,4 @@ class User(Base):
   username: Mapped[str | None]
   name: Mapped[str | None]
   birthday: Mapped[date | None]
-  photo_path: Mapped[str | None]
+  photo_id: Mapped[str | None]
