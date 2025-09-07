@@ -36,6 +36,13 @@ class UserCRUD:
 
     return user
 
+  async def get_all_users(
+    self,
+    session: AsyncSession
+  ):
+    query = select(User)
+    return (await session.execute(query)).scalars().all()
+
   async def change_user_data(
     self,
     session: AsyncSession,

@@ -1,5 +1,6 @@
-from datetime import date
+from datetime import datetime, date
 
+from sqlalchemy import text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -12,3 +13,6 @@ class User(Base):
   name: Mapped[str | None]
   birthday: Mapped[date | None]
   photo_id: Mapped[str | None]
+
+  installed_at: Mapped[datetime | None]
+  updated_at: Mapped[datetime | None] = mapped_column(server_default=text("TIMEZONE('utc', now())"), onupdate=datetime.utcnow)
