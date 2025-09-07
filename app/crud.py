@@ -55,16 +55,28 @@ class UserCRUD:
   ):
     user = await self.get_user(session, tg_id)
 
+
     if not user:
       return
     
-    if username:
+    if username == 'Не указывать':
+      user.username = None
+    elif username != 'Оставить текущее':
       user.username = username
-    if name:
+
+    if name == 'Не указывать':
+      user.name = None
+    elif name != 'Оставить текущее':
       user.name = name
-    if birthday:
+    
+    if birthday == 'Не указывать':
+      user.birthday = None
+    elif birthday != 'Оставить текущее':
       user.birthday = birthday
-    if photo_id:
+    
+    if photo_id == 'Не указывать':
+      user.photo_id = None
+    elif photo_id != 'Оставить текущее':
       user.photo_id = photo_id
 
 user_crud = UserCRUD()
