@@ -8,7 +8,6 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, FSInputFile, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 
-from database import async_session_factory
 import app.keyboards as kb
 from app.crud import user_crud
 from app.drawing import generate_calendar_with_photos
@@ -31,12 +30,13 @@ async def start(msg: Message):
     'Также можете настроить свой профиль, чтобы другие студенты могли вовремя поздравить вас'
   )
   await msg.answer(text, reply_markup=kb.start_keyboard, parse_mode='Markdown')
-  try:
-    async with async_session_factory() as session:
-      await user_crud.create_user(session, msg.from_user.id, msg.from_user.username)
-      await session.commit()
-  except Exception:
-    print('Пользователь существует')
+  
+  # Упрощенный вызов create_user без сессии
+  await user_crud.create_user(
+    tg_id=msg.from_user.id, 
+    username=msg.from_user.username
+  )
+
 
 @router.message(F.text == 'Посмотреть Календарь')
 async def calendar_message(msg: Message, state: FSMContext):
@@ -49,13 +49,11 @@ async def calendar_message(msg: Message, state: FSMContext):
     InlineKeyboardButton(text='-→', callback_data=f'calendar_year={today.year if today.month+1 < 13 else today.year+1},month={today.month+1 if today.month+1 < 13 else 1}')]
   ])
 
-
-
   await bot.send_photo(chat_id=msg.chat.id, photo=FSInputFile('./app/images/calendar.png'), caption=caption, reply_markup=markup)
     
 @router.callback_query(F.data.startswith('calendar_year='))
-async def calendar_callback(callback: CallbackQuery):
-  data = callback.data
+async def calendar_callback(CallbackQuery: CallbackQuery):
+  data = CallbackQuery.data
 
   params = {}
   for part in data.split(','):
@@ -73,7 +71,7 @@ async def calendar_callback(callback: CallbackQuery):
     InlineKeyboardButton(text='-→', callback_data=f'calendar_year={year if month+1 < 13 else year+1},month={month+1 if month+1 < 13 else 1}')]
   ])
         
-  await callback.message.edit_media(
+  await CallbackQuery.message.edit_media(
     media=InputMediaPhoto(
       media=FSInputFile('./app/images/calendar.png'),
       caption=caption
@@ -83,29 +81,42 @@ async def calendar_callback(callback: CallbackQuery):
 
 @router.message(F.text == 'Профиль')
 async def profile(msg: Message):
-  async with async_session_factory() as session:
-    user = await user_crud.get_user(session, msg.from_user.id)
+  # Вызов get_user без сессии
+  user = await user_crud.get_user(msg.from_user.id)
 
-    if user == None:
-      await msg.answer('Заполните свои данные для просмотра профиля', reply_markup=kb.profile_keyboard)
-      return
+  if user is None or user.get('name') is None:
+    await msg.answer('Заполните свои данные для просмотра профиля', reply_markup=kb.profile_keyboard)
+    return
 
-    text = (
-      f'Username: {'@' + user.username or '-'}\n'
-      f'Имя: {user.name or 'Не указано'}\n'
-      f'Дата рождения: {user.birthday or 'Не указано'}'
+  # Работаем с пользователем как со словарем
+  username = f"@{user['username']}" if user.get('username') else '-'
+  name = user.get('name', 'Не указано')
+  
+  # Форматируем дату из строки ISO
+  birthday_str = user.get('birthday')
+  if birthday_str:
+    birthday = date.fromisoformat(birthday_str).strftime('%d.%m.%Y')
+  else:
+    birthday = 'Не указано'
+  
+  text = (
+    f'Username: {username}\n'
+    f'Имя: {name}\n'
+    f'Дата рождения: {birthday}'
+  )
+
+  photo_id = user.get('photo_id')
+  if photo_id:
+    await bot.send_photo(
+      chat_id=msg.chat.id,
+      photo=photo_id,
+      caption=text,
+      parse_mode='Markdown',
+      reply_markup=kb.profile_keyboard
     )
+  else:
+    await msg.answer(text + '\nФотография: Не указано', reply_markup=kb.profile_keyboard)
 
-    if user.photo_id:
-      await bot.send_photo(
-        chat_id=msg.chat.id,
-        photo=user.photo_id,
-        caption=text,
-        parse_mode='Markdown',
-        reply_markup=kb.profile_keyboard
-      )
-    else:
-      await msg.answer(text+'\nФотография: Не указано', reply_markup=kb.profile_keyboard)
 
 @router.message(F.text == 'Обновить свою информацию')
 async def set_information(msg: Message, state: FSMContext):
@@ -171,17 +182,15 @@ async def set_birthday(msg: Message, state: FSMContext):
       return
 
   data = await state.get_data()
-  print(data)
-  async with async_session_factory() as session:
-    await user_crud.change_user_data(
-      session,
-      msg.from_user.id,
-      username=msg.from_user.username,
-      name=data['name'],
-      birthday=data['birthday'],
-      photo_id=data['file_id']
-    )
-    await session.commit()
+  
+  # Вызов change_user_data без сессии
+  await user_crud.change_user_data(
+    tg_id=msg.from_user.id,
+    username=msg.from_user.username,
+    name=data['name'],
+    birthday=data['birthday'],
+    photo_id=data['file_id']
+  )
   
   await msg.answer('Вся информация добавлена в ваш профиль.', reply_markup=kb.start_keyboard)
   await state.clear()
