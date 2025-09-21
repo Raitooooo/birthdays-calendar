@@ -22,8 +22,8 @@ async def main():
     scheduler.add_job(
       send_birthday_notifications, 
       trigger='cron', 
-      hour=00, 
-      minute=00, 
+      hour=21, 
+      minute=39, 
       kwargs={'bot': bot}
     )
     # scheduler.add_job(
